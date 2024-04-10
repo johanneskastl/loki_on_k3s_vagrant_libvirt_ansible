@@ -1,0 +1,42 @@
+---
+
+- name: 'Install Grafana Loki'
+  hosts: 'k3s1'
+  gather_facts: true
+  become: false
+  module_defaults:
+    kubernetes.core.helm:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s:
+      kubeconfig: './k3s-kubeconfig'
+
+  tasks:
+
+    - name: 'Install Grafana Loki via the helm chart'
+      kubernetes.core.helm:
+        chart_repo_url: 'https://grafana.github.io/helm-charts'
+        release_name: 'loki'
+        chart_ref: 'loki'
+        release_namespace: 'grafana-loki'
+        release_values:
+          write:
+            replicas: 1
+          read:
+            replicas: 1
+          backend:
+            replicas: 1
+          loki:
+            useTestSchema: true
+            storage:
+              bucketNames:
+                chunks: chunks
+                ruler: ruler
+                admin: admin
+              type: s3
+              s3:
+                endpoint: minio
+                secretAccessKey: minio-vagrant-libvirt-user
+                accessKeyId: secret123
+                s3ForcePathStyle: false
+                insecure: true
+      delegate_to: 'localhost'
