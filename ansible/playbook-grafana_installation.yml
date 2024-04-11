@@ -50,6 +50,9 @@
                   jsonData:
                     timeout: 60
                     maxLines: 1000
+                    httpHeaderName1: 'X-Scope-OrgID'
+                  secureJsonData:
+                    httpHeaderValue1: '1'
       delegate_to: 'localhost'
 
     - name: 'Wait until all pods are running'
