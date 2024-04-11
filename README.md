@@ -5,7 +5,10 @@ In the cluster, [Grafana Loki](https://grafana.com/docs/loki/latest/) is
 installed, together with Grafana (the graphical dashboard) and
 [Promtail](https://grafana.com/docs/loki/latest/send-data/promtail/).
 
-There is a second branch called **GrafanaAgent** where Grafana Agent is used
+There is a second branch called **Vector** where [Vector](https://vector.dev/)
+is used instead of Promtail.
+
+There is a third branch called **GrafanaAgent** where Grafana Agent is used
 instead of Promtail.
 
 Default OS is openSUSE Leap 15.5, but that can be changed in the Vagrantfile.
