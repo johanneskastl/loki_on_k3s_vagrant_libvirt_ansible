@@ -1,0 +1,28 @@
+---
+
+- name: 'Install Promtail'
+  hosts: 'k3s1'
+  gather_facts: true
+  become: false
+  module_defaults:
+    kubernetes.core.helm:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s_info:
+      kubeconfig: './k3s-kubeconfig'
+
+  tasks:
+
+    - name: 'Install Promtail via the helm chart'
+      kubernetes.core.helm:
+        chart_repo_url: 'https://grafana.github.io/helm-charts'
+        release_name: 'promtail'
+        chart_ref: 'promtail'
+        release_namespace: 'grafana-loki'
+        release_values:
+          config:
+            clients:
+              - url: http://loki-gateway/loki/api/v1/push
+                tenant_id: 1
+      delegate_to: 'localhost'
