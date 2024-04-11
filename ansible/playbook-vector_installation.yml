@@ -1,0 +1,44 @@
+---
+
+- name: 'Install Vector'
+  hosts: 'k3s1'
+  gather_facts: true
+  become: false
+  module_defaults:
+    kubernetes.core.helm:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s_info:
+      kubeconfig: './k3s-kubeconfig'
+
+  tasks:
+
+    - name: 'Install Vector via the helm chart'
+      delegate_to: 'localhost'
+      kubernetes.core.helm:
+        chart_repo_url: 'https://helm.vector.dev'
+        release_name: 'vector'
+        chart_ref: 'vector'
+        release_namespace: 'grafana-loki'
+        release_values:
+          role: "Agent"
+          service:
+            enabled: false
+          customConfig:
+            data_dir: /vector-data-dir
+            api:
+              enabled: false
+            sources:
+              kubernetes:
+                type: kubernetes_logs
+                self_node_name: k3s1
+            sinks:
+              loki:
+                type: loki
+                inputs: ["kubernetes"]
+                endpoint: "http://loki-gateway"
+                encoding:
+                  codec: "json"
+                labels:
+                  environment: vagrant
