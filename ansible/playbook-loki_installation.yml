@@ -22,11 +22,11 @@
         release_namespace: 'grafana-loki'
         release_values:
           write:
-            replicas: 1
+            affinity: null
           read:
-            replicas: 1
+            affinity: null
           backend:
-            replicas: 1
+            affinity: null
           chunksCache:
             enabled: false
           loki:
