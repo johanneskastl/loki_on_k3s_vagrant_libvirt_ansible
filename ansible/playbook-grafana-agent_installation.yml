@@ -1,0 +1,161 @@
+---
+
+- name: 'Install Grafana Agent via the Operator'
+  hosts: 'k3s1'
+  gather_facts: true
+  become: false
+  module_defaults:
+    kubernetes.core.helm:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s_info:
+      kubeconfig: './k3s-kubeconfig'
+
+  tasks:
+
+    - name: 'Install Grafana Agent Operator via the helm chart'
+      delegate_to: 'localhost'
+      kubernetes.core.helm:
+        chart_repo_url: 'https://grafana.github.io/helm-charts'
+        release_name: 'grafana-agent'
+        chart_ref: 'grafana-agent-operator'
+        release_namespace: 'grafana-loki'
+
+    - name: 'Create a GrafanaAgent instance'
+      delegate_to: 'localhost'
+      kubernetes.core.k8s:
+        state: 'present'
+        resource_definition: |
+          apiVersion: monitoring.grafana.com/v1alpha1
+          kind: GrafanaAgent
+          metadata:
+            name: grafana-agent
+            namespace: grafana-loki
+            labels:
+              app: grafana-agent
+          spec:
+            image: grafana/agent:v0.40.3
+            integrations:
+              selector:
+                matchLabels:
+                  agent: grafana-agent-integrations
+            logLevel: info
+            serviceAccountName: grafana-agent
+            metrics:
+              instanceSelector:
+                matchLabels:
+                  agent: grafana-agent-metrics
+              externalLabels:
+                cluster: cloud
+            logs:
+              instanceSelector:
+                matchLabels:
+                  agent: grafana-agent-logs
+
+    - name: 'Create a GrafanaAgent serviceaccount'
+      delegate_to: 'localhost'
+      kubernetes.core.k8s:
+        state: 'present'
+        resource_definition: |
+          apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: grafana-agent
+            namespace: grafana-loki
+
+    - name: 'Create a GrafanaAgent ClusterRole'
+      delegate_to: 'localhost'
+      kubernetes.core.k8s:
+        state: 'present'
+        resource_definition: |
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            name: grafana-agent
+          rules:
+          - apiGroups:
+            - ""
+            resources:
+            - nodes
+            - nodes/proxy
+            - nodes/metrics
+            - services
+            - endpoints
+            - pods
+            - events
+            verbs:
+            - get
+            - list
+            - watch
+          - apiGroups:
+            - networking.k8s.io
+            resources:
+            - ingresses
+            verbs:
+            - get
+            - list
+            - watch
+          - nonResourceURLs:
+            - /metrics
+            - /metrics/cadvisor
+            verbs:
+            - get
+
+    - name: 'Create a GrafanaAgent ClusterRoleBinding'
+      delegate_to: 'localhost'
+      kubernetes.core.k8s:
+        state: 'present'
+        resource_definition: |
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRoleBinding
+          metadata:
+            name: grafana-agent
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: grafana-agent
+          subjects:
+          - kind: ServiceAccount
+            name: grafana-agent
+            namespace: grafana-loki
+
+    - name: 'Create a GrafanaAgent LogsInstance'
+      delegate_to: 'localhost'
+      kubernetes.core.k8s:
+        state: 'present'
+        resource_definition: |
+          apiVersion: monitoring.grafana.com/v1alpha1
+          kind: LogsInstance
+          metadata:
+            name: primary
+            namespace: grafana-loki
+            labels:
+              agent: grafana-agent-logs
+          spec:
+            clients:
+              - url: "http://loki-gateway/loki/api/v1/push"
+            podLogsNamespaceSelector: {}
+            podLogsSelector:
+              matchLabels:
+                instance: primary
+
+    - name: 'Create a GrafanaAgent PodLogs object'
+      delegate_to: 'localhost'
+      kubernetes.core.k8s:
+        state: 'present'
+        resource_definition: |
+          apiVersion: monitoring.grafana.com/v1alpha1
+          kind: PodLogs
+          metadata:
+            labels:
+              instance: primary
+            name: kubernetes-pods
+            namespace: grafana-loki
+          spec:
+            pipelineStages:
+              - docker: {}
+            namespaceSelector:
+              any: true
+            selector:
+              matchLabels: {}
