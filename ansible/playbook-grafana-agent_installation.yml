@@ -1,0 +1,70 @@
+---
+
+- name: 'Install Grafana Agent via the Operator'
+  hosts: 'k3s1'
+  gather_facts: true
+  become: false
+  module_defaults:
+    kubernetes.core.helm:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s_info:
+      kubeconfig: './k3s-kubeconfig'
+
+  tasks:
+
+    - name: 'Install Grafana Agent via the helm chart'
+      delegate_to: 'localhost'
+      kubernetes.core.helm:
+        chart_repo_url: 'https://grafana.github.io/helm-charts'
+        release_name: 'grafana-agent'
+        chart_ref: 'grafana-agent'
+        release_namespace: 'grafana-loki'
+        release_values:
+          agent:
+            mode: static
+            configMap:
+              create: true
+              content: |
+                server:
+                  log_level: info
+                logs:
+                  configs:
+                    - name: vagrant-libvirt
+                      clients:
+                        - url: "http://loki-gateway/loki/api/v1/push"
+                          external_labels:
+                            cluster: k3s1
+                      positions:
+                        filename: /var/lib/grafana-agent/data/positions.yaml
+                      scrape_configs:
+                        - job_name: podLogs
+                          kubernetes_sd_configs:
+                            - role: pod
+                          pipeline_stages:
+                            - docker: {}
+                          relabel_configs:
+                            - source_labels:
+                                - job
+                              target_label: __tmp_prometheus_job_name
+                            - source_labels:
+                                - __meta_kubernetes_namespace
+                              target_label: namespace
+                            - source_labels:
+                                - __meta_kubernetes_service_name
+                              target_label: service
+                            - source_labels:
+                                - __meta_kubernetes_pod_name
+                              target_label: pod
+                            - source_labels:
+                                - __meta_kubernetes_pod_container_name
+                              target_label: container
+                            - replacement: grafana-loki/kubernetes-pods
+                              target_label: job
+                            - replacement: /var/log/pods/*$1/*.log
+                              separator: /
+                              source_labels:
+                                - __meta_kubernetes_pod_uid
+                                - __meta_kubernetes_pod_container_name
+                              target_label: __path__
