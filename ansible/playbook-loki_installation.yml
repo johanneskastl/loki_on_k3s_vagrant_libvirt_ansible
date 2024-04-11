@@ -30,6 +30,7 @@
           chunksCache:
             enabled: false
           loki:
+            auth_enabled: false
             useTestSchema: true
             storage:
               bucketNames:
