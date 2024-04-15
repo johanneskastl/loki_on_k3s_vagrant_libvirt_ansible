@@ -15,8 +15,8 @@
 - name: 'Run playbook-loki_installation.yml'
   ansible.builtin.import_playbook: playbook-loki_installation.yml
 
-- name: 'Run playbook-promtail_installation.yml'
-  ansible.builtin.import_playbook: playbook-promtail_installation.yml
+- name: 'Run playbook-alloy_installation.yml'
+  ansible.builtin.import_playbook: playbook-alloy_installation.yml
 
 - name: 'Run playbook-grafana_installation.yml'
   ansible.builtin.import_playbook: playbook-grafana_installation.yml
