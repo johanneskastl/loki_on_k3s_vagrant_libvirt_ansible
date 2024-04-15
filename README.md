@@ -15,6 +15,10 @@ There is a fourth branch called **GrafanaAgent_via_Operator** where Grafana
 Agent is used instead of Promtail. This time it is installed using the
 [operator](https://grafana.com/docs/agent/latest/operator/getting-started/).
 
+There is a fifth branch called **Alloy** where [Grafana
+Alloy](https://github.com/grafana/alloy) is used
+instead of Promtail.
+
 Default OS is openSUSE Leap 15.5, but that can be changed in the Vagrantfile.
 Please be aware, that this might break the Ansible provisioning.
 
