@@ -11,6 +11,10 @@ is used instead of Promtail.
 There is a third branch called **GrafanaAgent** where Grafana Agent is used
 instead of Promtail.
 
+There is a fourth branch called **GrafanaAgent_via_Operator** where Grafana
+Agent is used instead of Promtail. This time it is installed using the
+[operator](https://grafana.com/docs/agent/latest/operator/getting-started/).
+
 Default OS is openSUSE Leap 15.5, but that can be changed in the Vagrantfile.
 Please be aware, that this might break the Ansible provisioning.
 
