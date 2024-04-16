@@ -1,0 +1,64 @@
+---
+
+- name: 'Install Grafana Alloy'
+  hosts: 'k3s1'
+  gather_facts: true
+  become: false
+  module_defaults:
+    kubernetes.core.helm:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s_info:
+      kubeconfig: './k3s-kubeconfig'
+
+  tasks:
+
+    - name: 'Install Grafana Alloy via the helm chart'
+      delegate_to: 'localhost'
+      kubernetes.core.helm:
+        chart_repo_url: 'https://grafana.github.io/helm-charts'
+        release_name: 'grafana'
+        chart_ref: 'alloy'
+        release_namespace: 'grafana-loki'
+        release_values:
+          alloy:
+            configMap:
+              create: true
+              content: |-
+                logging {
+                  level = "info"
+                  format = "logfmt"
+                  write_to = [loki.write.pods.receiver]
+                }
+                otelcol.exporter.loki "default" {
+                  forward_to = [loki.write.pods.receiver]
+                }
+                discovery.kubernetes "pods" {
+                  role = "pod"
+                }
+                loki.source.kubernetes "pods" {
+                  targets    = discovery.kubernetes.pods.targets
+                  forward_to = [loki.write.pods.receiver]
+                }
+                loki.write "pods" {
+                  endpoint {
+                    url = "http://loki-gateway/loki/api/v1/push"
+                  }
+                }
+
+    - name: 'Wait until all pods are running'
+      delegate_to: 'localhost'
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: grafana-loki
+      register: pod_list
+      until:
+        '
+        pod_list | json_query("resources[*].status.phase") | unique == ["Running"]
+        or
+        pod_list | json_query("resources[*].status.phase") | unique == ["Running", "Succeeded"]
+        '
+      retries: 12
+      delay: 10
