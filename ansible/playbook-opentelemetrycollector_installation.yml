@@ -1,0 +1,40 @@
+---
+
+- name: 'Install OpenTelemetryCollector'
+  hosts: 'k3s1'
+  gather_facts: true
+  become: false
+  module_defaults:
+    kubernetes.core.helm:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s_info:
+      kubeconfig: './k3s-kubeconfig'
+
+  tasks:
+
+    - name: 'Install OpenTelemetryCollector via the helm chart'
+      delegate_to: 'localhost'
+      kubernetes.core.helm:
+        chart_repo_url: 'https://open-telemetry.github.io/opentelemetry-helm-charts'
+        release_name: 'opentelemetry-collector'
+        chart_ref: 'opentelemetry-collector'
+        release_namespace: 'grafana-loki'
+        release_values:
+          mode: daemonset
+          presets:
+            kubernetesAttributes:
+              enabled: true
+            logsCollection:
+              enabled: true
+              includeCollectorLogs: true
+          config:
+            exporters:
+              loki:
+                endpoint: "http://loki-gateway/loki/api/v1/push"
+            service:
+              pipelines:
+                logs:
+                  exporters:
+                    - loki
