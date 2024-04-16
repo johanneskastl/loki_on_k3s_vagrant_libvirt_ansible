@@ -15,7 +15,11 @@ There is a fourth branch called **GrafanaAgent_via_Operator** where Grafana
 Agent is used instead of Promtail. This time it is installed using the
 [operator](https://grafana.com/docs/agent/latest/operator/getting-started/).
 
-There is a fifth branch called **Alloy** where [Grafana
+There is a fifth branch called **GrafanaAgentFlowMode** where Grafana Agent is
+used instead of Promtail, but this time in [flow
+mode](https://grafana.com/docs/agent/latest/flow/).
+
+There is a sixth branch called **Alloy** where [Grafana
 Alloy](https://github.com/grafana/alloy) is used
 instead of Promtail.
 
