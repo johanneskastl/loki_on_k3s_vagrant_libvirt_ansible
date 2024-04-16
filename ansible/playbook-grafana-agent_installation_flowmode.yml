@@ -1,0 +1,46 @@
+---
+
+- name: 'Install Grafana Agent in flow mode'
+  hosts: 'k3s1'
+  gather_facts: true
+  become: false
+  module_defaults:
+    kubernetes.core.helm:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s:
+      kubeconfig: './k3s-kubeconfig'
+    kubernetes.core.k8s_info:
+      kubeconfig: './k3s-kubeconfig'
+
+  tasks:
+
+    - name: 'Install Grafana Agent via the helm chart'
+      delegate_to: 'localhost'
+      kubernetes.core.helm:
+        chart_repo_url: 'https://grafana.github.io/helm-charts'
+        release_name: 'grafana-agent'
+        chart_ref: 'grafana-agent'
+        release_namespace: 'grafana-loki'
+        release_values:
+          agent:
+            mode: flow
+            configMap:
+              create: true
+              content: |
+                logging {
+                  level = "info"
+                  format = "logfmt"
+                }
+                // Discover Kubernetes pods to collect metrics from
+                discovery.kubernetes "pods" {
+                  role = "pod"
+                }
+                loki.source.kubernetes "pods" {
+                  targets    = discovery.kubernetes.pods.targets
+                  forward_to = [loki.write.pods.receiver]
+                }
+                loki.write "pods" {
+                  endpoint {
+                    url = "http://loki-gateway/loki/api/v1/push"
+                  }
+                }
