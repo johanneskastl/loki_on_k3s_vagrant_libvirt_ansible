@@ -23,6 +23,9 @@ There is a sixth branch called **Alloy** where [Grafana
 Alloy](https://github.com/grafana/alloy) is used
 instead of Promtail.
 
+There is a seventh branch called **OpenTelemetryCollector** that uses the
+[OpenTelemetry Collector](https://opentelemetry.io/docs/kubernetes/helm/collector/).
+
 Default OS is openSUSE Leap 15.5, but that can be changed in the Vagrantfile.
 Please be aware, that this might break the Ansible provisioning.
 
